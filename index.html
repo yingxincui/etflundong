@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ETF动量分析</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+        }
+        h1 {
+            text-align: center;
+        }
+        .result {
+            margin-top: 20px;
+        }
+        .recommended {
+            font-weight: bold;
+            color: green;
+        }
+        .all-etfs {
+            margin-top: 20px;
+        }
+        .all-etfs table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .all-etfs th, .all-etfs td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .all-etfs th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ETF动量分析</h1>
+        <button id="analyzeButton">获取分析结果</button>
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        document.getElementById('analyzeButton').addEventListener('click', async () => {
+            try {
+                const response = await fetch('http://120.78.126.100:8000/analyze_etfs');
+                const data = await response.json();
+
+                const resultDiv = document.getElementById('result');
+                resultDiv.innerHTML = ''; // 清空之前的显示内容
+
+                // 显示日期
+                const date = document.createElement('p');
+                date.textContent = `日期: ${data.date}`;
+                resultDiv.appendChild(date);
+
+                // 显示推荐的ETF
+                const recommendedDiv = document.createElement('div');
+                recommendedDiv.classList.add('recommended');
+                recommendedDiv.innerHTML = '<h2>推荐持有：</h2>';
+                data.recommended_etfs.forEach(etf => {
+                    const etfDiv = document.createElement('p');
+                    // 将动量值转换为百分比格式并保留两位小数
+                    etfDiv.textContent = `${etf.symbol} (${etf.name}) - 动量: ${(etf.momentum * 100).toFixed(2)}%`;
+                    recommendedDiv.appendChild(etfDiv);
+                });
+                resultDiv.appendChild(recommendedDiv);
+
+                // 显示所有ETF的动量分析
+                const allEtfsDiv = document.createElement('div');
+                allEtfsDiv.classList.add('all-etfs');
+                allEtfsDiv.innerHTML = '<h2>所有ETF的动量分析：</h2>';
+                const table = document.createElement('table');
+                const headerRow = document.createElement('tr');
+                ['代码', '名称', '动量', '是否大于均线'].forEach(header => {
+                    const th = document.createElement('th');
+                    th.textContent = header;
+                    headerRow.appendChild(th);
+                });
+                table.appendChild(headerRow);
+
+                data.all_etfs.forEach(etf => {
+                    const row = document.createElement('tr');
+                    // 将动量值转换为百分比格式并保留两位小数
+                    row.innerHTML = `
+                        <td>${etf.symbol}</td>
+                        <td>${etf.name}</td>
+                        <td>${(etf.momentum * 100).toFixed(2)}%</td>
+                        <td>${etf.above_ma ? '大于' : '小于'}</td>
+                    `;
+                    table.appendChild(row);
+                });
+
+                allEtfsDiv.appendChild(table);
+                resultDiv.appendChild(allEtfsDiv);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                alert('获取数据失败，请检查网络连接或后端服务是否运行正常。');
+            }
+        });
+    </script>
+</body>
+</html>
